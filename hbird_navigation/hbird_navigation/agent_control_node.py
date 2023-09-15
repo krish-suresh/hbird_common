@@ -1,9 +1,16 @@
-
+import math
 import rclpy
 from rclpy.node import Node
 from rcl_interfaces.msg import ParameterDescriptor
 
 from hbird_msgs.msg import Waypoint, State
+from time import perf_counter
+from enum import Enum, auto
+
+class MovementState(Enum):
+    GROUND=auto()
+    TAKEOFF=auto()
+    LEFT=auto()
 
 
 class AgentControlNode(Node):
@@ -35,7 +42,7 @@ class AgentControlNode(Node):
         self._publish_timer = self.create_timer(self._publish_rate, self.control_cycle)
 
         # define stage
-        self.stage = "ground"
+        self.stage : MovementState = MovementState.GROUND
         self._state = State()
 
         # set desired position setpoints
@@ -48,7 +55,7 @@ class AgentControlNode(Node):
         # set thresholds
         self.pos_threshold = 0.1
         self.orient_threshold = 0.05
-
+        self.state_time = perf_counter()
 
     def state_update_callback(self, state_msg):
         self._state = state_msg # TODO: This is in ROS message format
@@ -58,8 +65,22 @@ class AgentControlNode(Node):
 
         pos_setpoint = Waypoint()
 
-        # your code here
-    
+        self.get_logger().info(f"State: {self.stage.name}, Time {(perf_counter() - self.state_time):.2f}")
+        match self.stage:
+            case MovementState.GROUND:
+                if perf_counter() - self.state_time > 5:
+                    self.state_time = perf_counter()
+                    self.stage = MovementState.TAKEOFF
+            case MovementState.TAKEOFF:
+                MovementState.GROUND.name
+                pos_setpoint.position.z = 1.0
+                pos_setpoint.heading = math.pi
+                if perf_counter() - self.state_time > 5:
+                    self.stage = MovementState.LEFT
+            case MovementState.LEFT:
+                pos_setpoint.position.z = 1.0
+                pos_setpoint.heading = math.pi/2
+
         # publish the setpoint
         self._pos_setpoint_publisher.publish(pos_setpoint)
 

@@ -10,7 +10,10 @@ from enum import Enum, auto
 class MovementState(Enum):
     GROUND=auto()
     TAKEOFF=auto()
-    LEFT=auto()
+    SW =auto()
+    NE = auto()
+    NW = auto()
+    SE = auto()
 
 
 class AgentControlNode(Node):
@@ -68,6 +71,8 @@ class AgentControlNode(Node):
         self.get_logger().info(f"State: {self.stage.name}, Time {(perf_counter() - self.state_time):.2f}")
         match self.stage:
             case MovementState.GROUND:
+                pos_setpoint.position.z = 0.0
+                pos_setpoint.heading = math.pi
                 if perf_counter() - self.state_time > 5:
                     self.state_time = perf_counter()
                     self.stage = MovementState.TAKEOFF
@@ -76,10 +81,41 @@ class AgentControlNode(Node):
                 pos_setpoint.position.z = 1.0
                 pos_setpoint.heading = math.pi
                 if perf_counter() - self.state_time > 5:
-                    self.stage = MovementState.LEFT
-            case MovementState.LEFT:
+                    self.stage = MovementState.SW
+            case MovementState.SW:
+                pos_setpoint.position.x = 1.0
+                pos_setpoint.position.y = 1.0
                 pos_setpoint.position.z = 1.0
-                pos_setpoint.heading = math.pi/2
+                pos_setpoint.heading = math.pi
+                if perf_counter() - self.state_time > 5:
+                    self.state_time = perf_counter()
+                    self.stage = MovementState.NE
+            case MovementState.NE:
+                pos_setpoint.position.x = -2.0
+                pos_setpoint.position.y = -2.0
+                pos_setpoint.position.z = 1.0
+                pos_setpoint.heading = math.pi
+                if perf_counter() - self.state_time > 5:
+                    self.state_time = perf_counter()
+                    self.stage = MovementState.SE
+            case MovementState.SE:
+                pos_setpoint.position.x = 2.0
+                pos_setpoint.position.y = -2.0
+                pos_setpoint.position.z = 1.0
+                pos_setpoint.heading = math.pi
+                if perf_counter() - self.state_time > 5:
+                    self.state_time = perf_counter()
+                    self.stage = MovementState.NW
+            case MovementState.NW:
+                pos_setpoint.position.x = -2.0
+                pos_setpoint.position.y = 2.0
+                pos_setpoint.position.z = 1.0
+                pos_setpoint.heading = math.pi
+                if perf_counter() - self.state_time > 5:
+                    self.state_time = perf_counter()
+                    self.stage = MovementState.TAKEOFF
+
+
 
         # publish the setpoint
         self._pos_setpoint_publisher.publish(pos_setpoint)

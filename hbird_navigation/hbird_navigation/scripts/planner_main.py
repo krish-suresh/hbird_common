@@ -1,13 +1,14 @@
 import yaml
 from planner_utils import *
 from path_planner import PathPlanner
+from pathlib import Path
 
 
 def main():
     """Main function that runs the simulation"""
     
     # get configuration file
-    config_file = "../config/planner_config.yaml"
+    config_file = str(Path(__file__).parent.parent) + "/config/planner_config.yaml"
     try:
         with open(config_file, "r") as file:
             config = yaml.load(file, Loader=yaml.FullLoader)

@@ -1,7 +1,13 @@
+<<<<<<< HEAD
 import math
+=======
+>>>>>>> b58f4bc620eb432bfe0c93ac6faefbc4569bbd66
 import rclpy
 from rclpy.node import Node
 from rcl_interfaces.msg import ParameterDescriptor
+
+import pathlib
+import yaml
 
 from hbird_msgs.msg import Waypoint, State
 from time import perf_counter
@@ -41,19 +47,29 @@ class AgentControlNode(Node):
                                                              pos_setpoint_topic, 10)
         
         # initialize timer
-        self._publish_rate = 0.5  # sec/cycle
+        self._publish_rate = 0.2  # sec/cycle
         self._publish_timer = self.create_timer(self._publish_rate, self.control_cycle)
 
         # define stage
         self.stage : MovementState = MovementState.GROUND
         self._state = State()
+        # get planner config file
+        config_path = str(pathlib.Path().parent.resolve())+"/src/hbird_common/hbird_navigation/hbird_navigation/config/"
+        config_file = "planner_config.yaml"
+        try:
+            with open(config_path+config_file, "r") as file:
+                config = yaml.load(file, Loader=yaml.FullLoader)
+        except FileNotFoundError:
+            print(f"The file '{config_file}' does not exist.")
+        except yaml.YAMLError as e:
+            print(f"Error parsing the YAML file: {e}")
 
-        # set desired position setpoints
-        self.x_des = 1.5
-        self.y_des = 1.5
-        self.z_des = 2.5
-        self.psi_des = 6.283
-        self.z_ground = 0.26
+        # ---------------------------------------------
+
+        # add functions from planner_main.py here below
+
+        # ---------------------------------------------
+        
 
         # set thresholds
         self.pos_threshold = 0.1
@@ -61,7 +77,7 @@ class AgentControlNode(Node):
         self.state_time = perf_counter()
 
     def state_update_callback(self, state_msg):
-        self._state = state_msg # TODO: This is in ROS message format
+        self._state = state_msg
 
     
     def control_cycle(self):
@@ -121,6 +137,12 @@ class AgentControlNode(Node):
         self._pos_setpoint_publisher.publish(pos_setpoint)
 
     
+    def map_to_webots_transform(self, waypoint):
+        """Helper function that returns a Waypoint adjusted to the webots reference frame"""
+        webots_wp = Waypoint()
+        webots_wp.position.x = waypoint.position.x - 4.5
+        webots_wp.position.y = waypoint.position.y - 5.0
+        return webots_wp
 
 
 

@@ -6,7 +6,7 @@ from geometry_msgs.msg import Vector3
 import numpy as np
 
 DIST_THRESH_TO_GOAL = 0.5
-STEP_SIZE = 0.5
+STEP_SIZE = 1.0
 
 
 class PathPlanner:
@@ -29,8 +29,8 @@ class PathPlanner:
         self.goal_pose = copy(env.goal_pose)
 
         self.trunc_obstacles = {
-            "x": [round(x, 2) for x in env.obstacles["x"]],
-            "y": [round(y, 2) for y in env.obstacles["y"]],
+            "x": [x for x in env.obstacles["x"]],
+            "y": [y for y in env.obstacles["y"]],
         }
 
     def compute_heuristic(self, query_point: Waypoint):
@@ -39,32 +39,10 @@ class PathPlanner:
             + (self.goal_pose.position.y - query_point.position.y) ** 2
         ) ** 0.5
 
-    def get_robot_corners(self, query_point: Waypoint) -> List[Tuple[int, int]]:
-        lf_corner = (
-            query_point.position.x - self.env.robot_radius,
-            query_point.position.y + self.env.robot_radius,
-        )
-        rf_corner = (
-            query_point.position.x + self.env.robot_radius,
-            query_point.position.y + self.env.robot_radius,
-        )
-        lr_corner = (
-            query_point.position.x - self.env.robot_radius,
-            query_point.position.y - self.env.robot_radius,
-        )
-        rr_corner = (
-            query_point.position.x + self.env.robot_radius,
-            query_point.position.y - self.env.robot_radius,
-        )
-
-        return [lf_corner, rf_corner, lr_corner, rr_corner]
-
     def is_colliding(self, query_point: Waypoint):
-        for corner in self.get_robot_corners(query_point):
-            if (
-                corner[0] in self.trunc_obstacles["x"]
-                and corner[1] in self.trunc_obstacles["y"]
-            ):
+        for idx in range(len(self.trunc_obstacles["x"])):
+            dist_to_obs = ((self.trunc_obstacles["x"][idx] - query_point.position.x)**2 + (self.trunc_obstacles["y"][idx] - query_point.position.y) ** 2) ** 0.5
+            if dist_to_obs < self.env.robot_radius:
                 return True
         return False
 
@@ -72,49 +50,49 @@ class PathPlanner:
         n_query = Waypoint(
             position=Vector3(
                 x=self.current_pose.position.x,
-                y=round(self.current_pose.position.y + STEP_SIZE, 2),
+                y=self.current_pose.position.y + STEP_SIZE,
             )
         )
         ne_query = Waypoint(
             position=Vector3(
-                x=round(self.current_pose.position.x + STEP_SIZE, 2),
-                y=round(self.current_pose.position.y + STEP_SIZE, 2),
+                x=self.current_pose.position.x + STEP_SIZE / 2**.5,
+                y=self.current_pose.position.y + STEP_SIZE / 2**.5,
             )
         )
         e_query = Waypoint(
             position=Vector3(
-                x=round(self.current_pose.position.x + STEP_SIZE, 2),
+                x=self.current_pose.position.x + STEP_SIZE,
                 y=self.current_pose.position.y,
             )
         )
         se_query = Waypoint(
             position=Vector3(
-                x=round(self.current_pose.position.x + STEP_SIZE, 2),
-                y=round(self.current_pose.position.y - STEP_SIZE, 2),
+                x=self.current_pose.position.x + STEP_SIZE / 2**.5,
+                y=self.current_pose.position.y - STEP_SIZE / 2**.5,
             )
         )
         s_query = Waypoint(
             position=Vector3(
                 x=self.current_pose.position.x,
-                y=round(self.current_pose.position.y - STEP_SIZE, 2),
+                y=self.current_pose.position.y - STEP_SIZE,
             )
         )
         sw_query = Waypoint(
             position=Vector3(
-                x=round(self.current_pose.position.x - STEP_SIZE, 2),
-                y=round(self.current_pose.position.y - STEP_SIZE, 2),
+                x=self.current_pose.position.x - STEP_SIZE / 2**.5,
+                y=self.current_pose.position.y - STEP_SIZE / 2**.5,
             )
         )
         w_query = Waypoint(
             position=Vector3(
-                x=round(self.current_pose.position.x - STEP_SIZE, 2),
+                x=self.current_pose.position.x - STEP_SIZE,
                 y=self.current_pose.position.y,
             )
         )
         nw_query = Waypoint(
             position=Vector3(
-                x=round(self.current_pose.position.x - STEP_SIZE, 2),
-                y=round(self.current_pose.position.y + STEP_SIZE, 2),
+                x=self.current_pose.position.x - STEP_SIZE / 2**.5,
+                y=self.current_pose.position.y + STEP_SIZE / 2**.5,
             )
         )
 
@@ -144,12 +122,11 @@ class PathPlanner:
             query_points = [
                 query
                 for query in self.get_query_points()
-                if not self.is_colliding(query)
+                if not self.is_colliding(query) and query not in path
             ]
             heuristics = [self.compute_heuristic(pt) for pt in query_points]
             new_pt = query_points[np.argmin(heuristics)]
             path.append(new_pt)
             self.current_pose = new_pt
 
-        breakpoint()
         return path

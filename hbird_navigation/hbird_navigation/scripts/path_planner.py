@@ -42,7 +42,7 @@ class PathPlanner:
     def is_colliding(self, query_point: Waypoint):
         for idx in range(len(self.trunc_obstacles["x"])):
             dist_to_obs = ((self.trunc_obstacles["x"][idx] - query_point.position.x)**2 + (self.trunc_obstacles["y"][idx] - query_point.position.y) ** 2) ** 0.5
-            if dist_to_obs < self.env.robot_radius:
+            if dist_to_obs < self.env.robot_radius + 0.5:
                 return True
         return False
 

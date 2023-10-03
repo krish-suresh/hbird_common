@@ -6,16 +6,14 @@ from itertools import product
 import matplotlib.pyplot as plt
 
 
-
-class Environment():
-
+class Environment:
     def __init__(self, config):
         """
         This class parses the configuration files to create an environment object with all relevant params
 
         You do not need to edit this class
         """
-        
+
         # create start_pose waypoint
         self.start_pose = Waypoint()
         self.start_pose.position.x = config["poses"]["start_x"]
@@ -28,7 +26,7 @@ class Environment():
         self.goal_pose.position.x = config["poses"]["goal_x"]
         self.goal_pose.position.y = config["poses"]["goal_y"]
         self.goal_pose.position.z = config["poses"]["goal_z"]
-        self.goal_pose.heading= config["poses"]["goal_yaw"]
+        self.goal_pose.heading = config["poses"]["goal_yaw"]
 
         # set map dimensions
         self.x_min = config["map"]["dimensions"]["x_min"]
@@ -47,7 +45,6 @@ class Environment():
         # create gridlines dictionary
         self.gridlines = self.create_gridlines()
 
-    
     def create_obstacles(self, obs_corners):
         """
         Method takes in the two corners of rectangles from the yaml file
@@ -65,10 +62,9 @@ class Environment():
             obst_val += product(x_vals_obst, y_vals_obst)
 
         obstacles["x"] = [xy[0] for xy in obst_val]
-        obstacles["y"] = [xy[1] for xy in obst_val] 
-        
+        obstacles["y"] = [xy[1] for xy in obst_val]
+
         return obstacles
-        
 
     def create_gridlines(self):
         """
@@ -78,7 +74,7 @@ class Environment():
         grid_x, grid_y = [], []
         gx, gy = 0, 0
         gridlines = dict()
-        
+
         while gx < self.x_max:
             gx += self.grid_size
             grid_x.append(gx)
@@ -92,21 +88,21 @@ class Environment():
         return gridlines
 
 
-
-class Visualizer():
+class Visualizer:
     """
     This class handles the 2D visualization of the planner
 
     You do not need to edit this class
     """
+
     def __init__(self, env):
         """
         Inputs:
-        - env (dict):    dictionary storing relevant environment parameters 
+        - env (dict):    dictionary storing relevant environment parameters
                          (see Environment class in planner_utils.py)
         """
         self.env = env
-        
+
         # create plot and figure object
         self.fig, self.ax = plt.subplots()
         # set figure size
@@ -114,21 +110,21 @@ class Visualizer():
         # set marker parameters
         self.marker_scale_factor = 1000
         self.robot_marker_size = self.scale_marker_size(self.env.robot_radius)
-        self.collision_box_marker_size = self.scale_marker_size(self.env.robot_col_radius)
-
+        self.collision_box_marker_size = self.scale_marker_size(
+            self.env.robot_col_radius
+        )
 
     def scale_marker_size(self, size):
         """Calculate the marker size relative to the axes limits"""
         x_range = self.env.x_max - self.env.x_min
         y_range = self.env.y_max - self.env.y_min
         max_range = max(x_range, y_range)
-        return (size* self.marker_scale_factor) / max_range      
-    
+        return (size * self.marker_scale_factor) / max_range
 
     def plot(self, path):
         """
         Function handles plotting of the map, start/goal locations and path
-        
+
         Inputs:
         - path (list of Waypoint objects)
         """
@@ -137,32 +133,50 @@ class Visualizer():
         self.ax.plot(self.env.obstacles["x"], self.env.obstacles["y"], ".k")
 
         # start and goal position plots
-        self.ax.plot(self.env.start_pose.position.x, 
-                self.env.start_pose.position.y,
-                marker='s', 
-                markersize=self.robot_marker_size, 
-                color='red', alpha=0.5)
-        self.ax.plot(self.env.start_pose.position.x, 
-                self.env.start_pose.position.y,
-                marker='s', 
-                markersize=self.collision_box_marker_size, 
-                color='red', alpha=0.5)
-        self.ax.plot(self.env.start_pose.position.x, 
-                self.env.start_pose.position.y, 
-                "o", color='black')
-        self.ax.plot(self.env.goal_pose.position.x, 
-                self.env.goal_pose.position.y, 
-                marker='s', 
-                markersize=self.robot_marker_size, 
-                color='green', alpha=0.5)
-        self.ax.plot(self.env.goal_pose.position.x, 
-                self.env.goal_pose.position.y, 
-                marker='s', 
-                markersize=self.collision_box_marker_size, 
-                color='green', alpha=0.5)
-        self.ax.plot(self.env.goal_pose.position.x, 
-                self.env.goal_pose.position.y, 
-                "o", color='black')
+        self.ax.plot(
+            self.env.start_pose.position.x,
+            self.env.start_pose.position.y,
+            marker="s",
+            markersize=self.robot_marker_size,
+            color="red",
+            alpha=0.5,
+        )
+        self.ax.plot(
+            self.env.start_pose.position.x,
+            self.env.start_pose.position.y,
+            marker="s",
+            markersize=self.collision_box_marker_size,
+            color="red",
+            alpha=0.5,
+        )
+        self.ax.plot(
+            self.env.start_pose.position.x,
+            self.env.start_pose.position.y,
+            "o",
+            color="black",
+        )
+        self.ax.plot(
+            self.env.goal_pose.position.x,
+            self.env.goal_pose.position.y,
+            marker="s",
+            markersize=self.robot_marker_size,
+            color="green",
+            alpha=0.5,
+        )
+        self.ax.plot(
+            self.env.goal_pose.position.x,
+            self.env.goal_pose.position.y,
+            marker="s",
+            markersize=self.collision_box_marker_size,
+            color="green",
+            alpha=0.5,
+        )
+        self.ax.plot(
+            self.env.goal_pose.position.x,
+            self.env.goal_pose.position.y,
+            "o",
+            color="black",
+        )
 
         # path plots
         path_x, path_y = [], []
@@ -178,4 +192,3 @@ class Visualizer():
         self.ax.set_ylim([self.env.y_min, self.env.y_max])
         plt.grid(True)
         plt.show()
- 
